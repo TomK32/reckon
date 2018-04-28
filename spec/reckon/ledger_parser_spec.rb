@@ -17,19 +17,20 @@ describe Reckon::LedgerParser do
     end
 
     it "should parse entries correctly" do
-      @ledger.entries.first[:desc].should == "* Checking balance"
-      @ledger.entries.first[:date].should == "2004-05-01"
-      @ledger.entries.first[:accounts].first[:name].should == "Assets:Bank:Checking"
-      @ledger.entries.first[:accounts].first[:amount].should == 1000
-      @ledger.entries.first[:accounts].last[:name].should == "Equity:Opening Balances"
-      @ledger.entries.first[:accounts].last[:amount].should == -1000
-
-      @ledger.entries.last[:desc].should == "(100) Credit card company"
-      @ledger.entries.last[:date].should == "2004/05/27"
-      @ledger.entries.last[:accounts].first[:name].should == "Liabilities:MasterCard"
-      @ledger.entries.last[:accounts].first[:amount].should == 20.24
-      @ledger.entries.last[:accounts].last[:name].should == "Assets:Bank:Checking"
-      @ledger.entries.last[:accounts].last[:amount].should == -20.24
+      @ledger.entries.first.should == {
+        desc: "* Checking balance",
+        date: "2004-05-01",
+        accounts: [
+          {name: "Assets:Bank:Checking", amount: 1000.0, unit: "$"},
+          {name: "Equity:Opening Balances", amount: -1000.0, unit: "$"}
+        ]}
+      @ledger.entries.last.should == {
+        date: "2004/05/27",
+        desc: "(100) Credit card company",
+        accounts: [
+          {name: "Liabilities:MasterCard", amount: 20.24, unit: "$"},
+          {name: "Assets:Bank:Checking", amount: -20.24, unit: "$"}
+        ]}
     end
   end
 

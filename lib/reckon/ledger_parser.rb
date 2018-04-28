@@ -23,8 +23,16 @@ module Reckon
           date = $1
           desc = $3
           accounts = []
-        elsif date && entry =~ /^\s+([a-z\s:_\-]+)(\s*$|(\s+[\$\.,\-\d\+]+)($|\s+($|[^\$\.,\-\d\+])))/i
-          accounts << { :name => $1.strip, :amount => clean_money($3) }
+        elsif date && (m = entry.match(/^\s+(?<account>.+?)(?:\s\s|\t|\s*$)(?<amount_with_unit>.*)/))
+          # regexp inspired by https://github.com/Tagirijus/ledger-parse/blob/master/ledgerparse.py
+          if m['amount_with_unit']
+            u = m['amount_with_unit'].strip.match(/(?<unit_front>[^\d,.\-+]+)?[\d,.\-+]+(?<unit_back>[^\d,.])?/)
+            if u
+              unit = u['unit_front'] || u['unit_back']
+            end
+            amount = m['amount_with_unit'].strip
+          end
+          accounts << { :name => m['account'].strip, :amount => clean_money(amount) }.tap{|h| h[:unit] = unit.strip if unit }
         else
           @entries << { :date => date.strip, :desc => desc.strip, :accounts => balance(accounts) } if date
           date = desc = nil
@@ -37,8 +45,12 @@ module Reckon
     def balance(accounts)
       if accounts.any? { |i| i[:amount].nil? }
         sum = accounts.inject(0) {|m, account| m + (account[:amount] || 0) }
+        unit = accounts.collect{|a| a[:unit] }.compact.first
         count = 0
         accounts.each do |account|
+          if unit
+            account[:unit] ||= unit
+          end
           if account[:amount].nil?
             count += 1
             account[:amount] = 0 - sum
@@ -56,7 +68,14 @@ module Reckon
 
     def clean_money(money)
       return nil if money.nil? || money.length == 0
-      money.gsub(/[^0-9.-]/, '').to_f
+      # test wether . or , are used for decimal dividers
+      # but only does accept two decimal places
+      if money.match(/\,\d\d$/)
+        # remove thousands dividers first before replacing the ,
+        money.strip.gsub(/\./, '').gsub(/\,/, '.').gsub(/[^0-9.-]/, '').to_f
+      else
+        money.strip.gsub(/[^0-9.-]/, '').to_f
+      end
     end
   end
 end

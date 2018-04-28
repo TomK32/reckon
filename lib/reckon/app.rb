@@ -109,6 +109,7 @@ module Reckon
 
         possible_answers = most_specific_regexp_match(row)
         possible_answers = weighted_account_match( row ).map! { |a| a[:account] } if possible_answers.empty?
+        possible_answers.reject!{|s| s.strip == '' }
 
         ledger = if row[:money] > 0
           if options[:unattended]
