@@ -79,9 +79,9 @@ module Reckon
       # but only does accept two decimal places
       if money.match(/\,\d\d$/)
         # remove thousands dividers first before replacing the ,
-        money.strip.gsub(/\./, '').gsub(/\,/, '.').gsub(/[^0-9.-]/, '').to_f
+        BigDecimal.new(money.strip.gsub(/\./, '').gsub(/\,/, '.').gsub(/[^0-9.-]/, ''))
       else
-        money.strip.gsub(/[^0-9.-]/, '').to_f
+        BigDecimal.new(money.strip.gsub(/[^0-9.-]/, ''))
       end
     end
   end
