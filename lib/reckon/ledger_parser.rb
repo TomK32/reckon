@@ -23,7 +23,7 @@ module Reckon
           date = $1
           desc = $3
           accounts = []
-        elsif date && (m = entry.match(/^\s+(?<account>.+?)(?:\s\s|\t|\s*$)(?<amount_with_unit>.*)/))
+        elsif date && (m = entry.match(/^\s+(?<account>.+?)(?:\s\s|\t|\s*$)(?<amount_with_unit>[^;]*)(?:; (?<comment>.+)$)?/))
           # regexp inspired by https://github.com/Tagirijus/ledger-parse/blob/master/ledgerparse.py
           if m['amount_with_unit']
             u = m['amount_with_unit'].strip.match(/(?<unit_front>[^\d,.\-+]+)?[\d,.\-+]+(?<unit_back>[^\d,.])?/)
@@ -32,7 +32,14 @@ module Reckon
             end
             amount = m['amount_with_unit'].strip
           end
-          accounts << { :name => m['account'].strip, :amount => clean_money(amount) }.tap{|h| h[:unit] = unit.strip if unit }
+          accounts << { :name => m['account'].strip, :amount => clean_money(amount) }.tap do |account|
+            if unit
+              account[:unit] = unit.strip
+            end
+            if m['comment']
+              account[:comment] = m['comment']
+            end
+          end
         else
           @entries << { :date => date.strip, :desc => desc.strip, :accounts => balance(accounts) } if date
           date = desc = nil
